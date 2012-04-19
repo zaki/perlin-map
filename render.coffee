@@ -9,51 +9,24 @@ requestAnimFrame =
       )
 
 draw = () ->
-  imageData = c.getImageData(0, 0, canvas.width, canvas.height)
+  for x in [0..canvas.width/10]
+    for y in [0..canvas.height/10]
+      tile = map[x+y*(canvas.width/10)][0]
+      vars = map[x+y*(canvas.width/10)][1]
 
-  date = new Date
+      if tile == 1
+        vars -= 0.1
+        if vars < 0
+          vars = 4
+        map[x+y*(canvas.width/10)][1] = vars
 
-  for x in [0..canvas.width]
-    for y in [0..canvas.height]
-      _x = x / canvas.width
-      _y = y / canvas.height
-      size = document.getElementById("si").value
-
-      z = (date.getTime() / 50) % 100 * 0.01
-      if z > 1.0
-        z = 0.5
-      n = 255*PerlinNoise.noise(size*_x, size*_y, z)
-
-      hi_treshold = parseInt(document.getElementById("hi").value)
-      lo_treshold = parseInt(document.getElementById("lo").value)
-
-      [r, g, b, a] = [25, 125, 25, 255]
-
-      if n > (hi_treshold + 30)
-        [r,g,b] = [255, 255, 255]
-      else if n > hi_treshold
-        [r, g, b] = [n, n, n]
-      else if n < lo_treshold
-        b = 255
-      else if n < lo_treshold + 8
-        [r, g, b] = [200, 200, 127]
-
-      i = (x+y*canvas.width)*4
-      imageData.data[i+0] = r
-      imageData.data[i+1] = g
-      imageData.data[i+2] = b
-      imageData.data[i+3] = a
+      c.drawImage(sprites, vars*10, tile*10, 10, 10, x*10, y*10, 10, 10)
 
   for p in pos
-    for _x in [-2..2]
-      for _y in [-2..2]
-        i = ((_x+p.x)+(_y+p.y)*canvas.width)*4
-        imageData.data[i+0] = 255
-        imageData.data[i+1] = 0
-        imageData.data[i+2] = 0
-        imageData.data[i+3] = 255
+    [x, y, v] = [p.x, p.y, p.v]
 
-  c.putImageData(imageData, 0, 0)
+    if map[x+y*(canvas.width/10)][0] != 1
+      c.drawImage(sprites, v*10, 50, 10, 10, x*10, y*10, 10, 10)
 
   if document.getElementById("ch").checked
     requestAnimFrame(draw)
@@ -61,16 +34,52 @@ draw = () ->
 c = null
 pos = []
 
+map = []
+sprites = new Image
+sprites.src = "map_sprites.png"
+
 generate = () ->
   pos = []
   for i in [1..5]
-    pos.push { x: parseInt(Math.random()*canvas.width), y: parseInt(Math.random()*canvas.height) }
+    pos.push { x: parseInt(Math.random()*canvas.width/10), y: parseInt(Math.random()*canvas.height/10), v:parseInt(Math.random()*4) }
+
+  date = new Date
+
+  for x in [0..canvas.width/10]
+    for y in [0..canvas.height/10]
+      _x = x / canvas.width * 15
+      _y = y / canvas.height * 15
+      size = document.getElementById("si").value
+
+      z = (date.getTime() / 50) % 100 * 0.01
+      if z > 1.0
+        z = 0.5
+      n = 255*PerlinNoise.noise(size*_x, size*_y, z)
+      console.log n
+
+      hi_treshold = parseInt(document.getElementById("hi").value)
+      lo_treshold = parseInt(document.getElementById("lo").value)
+
+      [r, g, b, a] = [25, 125, 25, 255]
+
+      map_i = y*(canvas.width/10) + x
+      v     = parseInt(Math.random()*5)
+      if n > (hi_treshold + 30)
+        map[map_i] = [4, v]
+      else if n > hi_treshold
+        map[map_i] = [3, v]
+      else if n < lo_treshold
+        map[map_i] = [1, v]
+      else if n < lo_treshold + 8
+        map[map_i] = [2, v]
+      else
+        map[map_i] = [0, v]
 
 window.onload = () ->
   canvas = document.getElementById('canvas')
-  size = 150
-  canvas.width  = size
-  canvas.height = size
+  size = 75
+  canvas.width  = size*10
+  canvas.height = size*10
 
   c = canvas.getContext('2d')
 
